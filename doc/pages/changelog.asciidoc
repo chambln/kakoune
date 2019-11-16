@@ -17,6 +17,8 @@ released versions.
 
 * `WrapMarker` face used by `wrap -marker` highlighter
 
+* Replace NCursesUI with a custom terminal UI implementation
+
 == Kakoune 2019.07.01
 
 * Re-organized bundled script files directory hierarchy.
