@@ -27,7 +27,12 @@ hook -group git-status-highlight global WinSetOption filetype=git-status %{
     hook -once -always window WinSetOption filetype=.* %{ remove-highlighter window/git-status }
 }
 
-define-command -params .. git %{
+define-command \
+-params .. \
+-docstring '
+    git [<arguments>]: git utility wrapper
+    All the optional arguments are forwarded to the git utility' \
+git %{
     evaluate-commands %sh{
         commit() {
             GIT_EDITOR='' EDITOR='' VISUAL='' git commit "$@" > /dev/null 2>&1
