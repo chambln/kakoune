@@ -29,6 +29,7 @@ hook -group git-status-highlight global WinSetOption filetype=git-status %{
 
 define-command \
 -params .. \
+-file-completion \
 -docstring '
     git [<arguments>]: git utility wrapper
     All the optional arguments are forwarded to the git utility' \
@@ -58,21 +59,30 @@ git %{
             "
         }
 
+        cmd() {
+            if "$@" >/dev/null 2>&1; then
+                printf 'echo -markup {Information}%s succeeded\n' "$1"
+            else
+                printf 'fail %s failed (%s)\n' "$1" "$?"
+            fi
+        }
+
         fifo() {
             printf %s "
-                evaluate-commands -try-client '$1' %{
-                    fifo -name \"*git %arg{1}*\" git %arg{@}
-                    set-option buffer filetype '$2'
+                evaluate-commands -try-client '${client:-docs}' %{
+                    fifo -name \"*${name:-$1}*\" $*
+                    set-option buffer filetype '${filetype:-diff}'
                 }
             "
         }
 
-        case $1 in
-            commit) "$@" ;;
-            status) fifo jump git-status ;;
-            log)    fifo jump git-log ;;
-            show)   fifo docs git-log ;;
-            *)      fifo docs diff ;;
+        case "$1" in
+            commit)    "$@" ;;
+            add|reset) cmd git "$@" ;;
+            status)    client=jump   filetype=git-status fifo git "$@" ;;
+            log)       client=jump   filetype=git-log    fifo git "$@" ;;
+            show)      name="git $1" filetype=git-log    fifo git "$@" ;;
+            *)         name="git $1"                     fifo git "$@" ;;
         esac
     }
 }
