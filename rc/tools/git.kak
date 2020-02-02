@@ -1,3 +1,6 @@
+declare-option -docstring "name of the client in which documentation is to be displayed" \
+    str docsclient
+
 hook -group git-log-highlight global WinSetOption filetype=git-log %{
     add-highlighter window/git-log group
     add-highlighter window/git-log/ regex '^([*|\\ /_.-])*' 0:keyword
