@@ -26,14 +26,45 @@ hook -group git-status-highlight global WinSetOption filetype=git-status %{
 
 define-command -params .. git %{
     evaluate-commands %sh{
-        case $1 in log|status) client=jump         ;; esac
-        case $1 in status)     filetype=git-status ;; esac
-        case $1 in log|show)   filetype=git-log    ;; esac
-        printf %s "
-            eval -try-client '${client:-docs}' %{
-                fifo -name \"*git %arg{1}*\" git %arg{@}
-                set-option buffer filetype '${filetype:-diff}'
-            }
-        "
+        commit() {
+            GIT_EDITOR='' EDITOR='' VISUAL='' git commit "$@" > /dev/null 2>&1
+            msgfile="$(git rev-parse --git-dir)/COMMIT_EDITMSG"
+            printf %s "
+                edit '$msgfile'
+                hook buffer BufWritePost '.*\Q$msgfile\E' %{
+                    evaluate-commands %sh{
+                        if git commit -F '$msgfile' --cleanup=strip $* > /dev/null; then
+                            printf %s '
+                                evaluate-commands -client '$kak_client' %{
+                                    echo -markup %{{Information}commit succeeded}
+                                }
+                                delete-buffer
+                            '
+                        else
+                            printf '
+                                evaluate-commands -client %s 'fail commit failed!!!'
+                            ' "$kak_client"
+                        fi
+                    }
+                }
+            "
+        }
+
+        fifo() {
+            printf %s "
+                evaluate-commands -try-client '$1' %{
+                    fifo -name \"*git %arg{1}*\" git %arg{@}
+                    set-option buffer filetype '$2'
+                }
+            "
+        }
+
+        case $1 in
+            commit) "$@" ;;
+            status) fifo jump git-status ;;
+            log)    fifo jump git-log ;;
+            show)   fifo docs git-log ;;
+            *)      fifo docs diff ;;
+        esac
     }
 }
